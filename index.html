@@ -251,6 +251,12 @@
   .carrier-select-sm {
     height: 32px; font-size: 12px; flex: 1;
   }
+  .custom-url-note {
+    margin-top: 10px;
+    font-size: 11px; color: var(--ink-faint);
+    word-break: break-all;
+  }
+  .custom-url-note span { color: var(--gold); }
   .btn-sm {
     font-size: 12px; padding: 5px 12px;
     border-radius: var(--radius-sm);
@@ -409,6 +415,7 @@
   .c-cma-cgm    { background: #0a1a3a; color: #4d88ff; }
   .c-dpd        { background: #3a0a1a; color: #e87fa0; }
   .c-gls        { background: #2a2a0a; color: #c8c84d; }
+  .c-gls-spain  { background: #2a2a0a; color: #f0d000; }
   .c-colis-prive { background: #1a2a1a; color: #7fc87f; }
   .c-tnt        { background: #3a1a00; color: #ff9933; }
   .c-seur       { background: #2a0a1a; color: #e85a8a; }
@@ -483,6 +490,7 @@
         </optgroup>
         <optgroup label="Europe">
           <option value="seur">SEUR (Espagne)</option>
+          <option value="gls-spain">GLS Spain</option>
           <option value="correos">Correos (Espagne)</option>
           <option value="correos-express">Correos Express</option>
           <option value="ctt">CTT (Portugal)</option>
@@ -747,6 +755,7 @@ const TRACKING_URLS = {
   usps:             'https://tools.usps.com/go/TrackConfirmAction?tLabels={num}',
   'royal-mail':     'https://www.royalmail.com/track-your-item#/tracking-results/{num}',
   seur:             'https://www.seur.com/livetracking/?segOnlineIdentificador={num}',
+  'gls-spain':      'https://mygls.gls-spain.es/?match={num}',
   correos:          'https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={num}',
   'correos-express':'https://www.correosexpress.com/web/correosexpress/itemtracking?tracking={num}',
   ctt:              'https://appserver.ctt.pt/CustomerArea/PublicArea_Detail?ObjectCodeInput={num}',
@@ -761,8 +770,13 @@ const TRACKING_URLS = {
 };
 
 function trackingUrlFor(parcel) {
+  if (parcel.customUrl) return parcel.customUrl;
   const tpl = TRACKING_URLS[parcel.carrierKey];
-  if (tpl) return tpl.replace('{num}', encodeURIComponent(parcel.num));
+  if (tpl) {
+    return tpl
+      .replace('{num}', encodeURIComponent(parcel.num))
+      .replace('{cp}', encodeURIComponent(profile?.postal || ''));
+  }
   return guessTrackingUrl(parcel.num);
 }
 
@@ -867,8 +881,10 @@ function renderCard(p, faded = false) {
       <div class="detail-actions">
         <button class="btn-sm" onclick="refreshParcel(${p.id})">↻ Actualiser</button>
         <button class="btn-sm" onclick="renameParcel(${p.id})">Renommer</button>
+        <button class="btn-sm" onclick="setCustomUrl(${p.id})">${p.customUrl ? '✎ Modifier le lien' : '+ Lien personnalisé'}</button>
         <button class="btn-sm danger" onclick="deleteParcel(${p.id})">Supprimer</button>
       </div>
+      ${p.customUrl ? `<div class="custom-url-note">↗ Lien personnalisé actif : <span>${esc(p.customUrl)}</span></div>` : ''}
     </div>` : '';
 
   const expandIcon = p.open ? '▲' : '▼';
@@ -915,7 +931,7 @@ const CARRIERS = [
     ['usps','USPS'],['royal-mail','Royal Mail']
   ]},
   { group: 'Europe', items: [
-    ['seur','SEUR (Espagne)'],['correos','Correos (Espagne)'],['correos-express','Correos Express'],
+    ['seur','SEUR (Espagne)'],['gls-spain','GLS Spain'],['correos','Correos (Espagne)'],['correos-express','Correos Express'],
     ['ctt','CTT (Portugal)'],['poste-italiane','Poste Italiane'],['brt','BRT (Italie)'],
     ['hermes','Hermes / Evri'],['postnl','PostNL']
   ]},
@@ -959,6 +975,28 @@ function renameParcel(id) {
   const newName = prompt('Nom du colis :', parcel.name || '');
   if (newName === null) return;
   parcel.name = newName.trim();
+  saveParcels();
+  renderAll();
+}
+
+// ── CUSTOM URL ──────────────────────────────────────
+function setCustomUrl(id) {
+  const parcel = parcels.find(p => p.id === id);
+  if (!parcel) return;
+  const current = parcel.customUrl || '';
+  const input = prompt('Coller le lien de suivi exact pour ce colis\n(laisser vide pour revenir au lien automatique) :', current);
+  if (input === null) return;
+  const trimmed = input.trim();
+  if (!trimmed) {
+    delete parcel.customUrl;
+    showToast('Lien automatique rétabli.');
+  } else if (!/^https?:\/\//i.test(trimmed)) {
+    showToast('Le lien doit commencer par http(s)://');
+    return;
+  } else {
+    parcel.customUrl = trimmed;
+    showToast('Lien personnalisé enregistré.');
+  }
   saveParcels();
   renderAll();
 }
