@@ -124,6 +124,20 @@
   }
   .carrier-select:focus { border-color: var(--gold); }
   .carrier-select option { background: var(--navy-mid); color: var(--ink); }
+  .name-input {
+    flex: 1;
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    height: 38px;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .name-input:focus { border-color: var(--gold); }
+  .name-input::placeholder { color: var(--ink-faint); }
   .select-label {
     font-size: 12px; color: var(--ink-faint); white-space: nowrap; flex-shrink: 0;
   }
@@ -227,6 +241,15 @@
   }
   .detail-actions {
     display: flex; gap: 8px; margin-top: 10px;
+  }
+  .detail-carrier {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--navy-border);
+  }
+  .carrier-select-sm {
+    height: 32px; font-size: 12px; flex: 1;
   }
   .btn-sm {
     font-size: 12px; padding: 5px 12px;
@@ -391,6 +414,10 @@
       <input class="add-input" id="trackInput" placeholder="Coller un numéro de suivi…" onkeydown="if(event.key==='Enter') addTracking()" />
       <button class="add-btn" id="addBtn" onclick="addTracking()">Ajouter</button>
     </div>
+    <div class="add-row-2" style="margin-bottom:10px;">
+      <span class="select-label">Nom :</span>
+      <input class="name-input" id="nameInput" placeholder="ex. Chaussures, Cadeau maman… (optionnel)" onkeydown="if(event.key==='Enter') addTracking()" />
+    </div>
     <div class="add-row-2">
       <span class="select-label">Transporteur :</span>
       <select class="carrier-select" id="carrierSelect">
@@ -514,8 +541,10 @@ function applyProfile() {
 // ── ADD TRACKING ───────────────────────────────────
 async function addTracking() {
   const input  = document.getElementById('trackInput');
+  const nameIn = document.getElementById('nameInput');
   const select = document.getElementById('carrierSelect');
   const num    = input.value.trim().replace(/\s+/g, '');
+  const userName = nameIn.value.trim();
   const forcedCarrierKey = select.value || '';
   const forcedCarrierName = select.options[select.selectedIndex]?.text || '';
 
@@ -525,6 +554,7 @@ async function addTracking() {
   const parcel = {
     id: Date.now(),
     num,
+    name: userName,
     carrier: forcedCarrierKey ? forcedCarrierName : 'Identification…',
     carrierKey: forcedCarrierKey || 'default',
     forcedCarrier: forcedCarrierKey ? forcedCarrierName : '',
@@ -544,6 +574,7 @@ async function addTracking() {
   parcels.unshift(parcel);
   saveParcels();
   input.value = '';
+  nameIn.value = '';
   select.value = '';
   renderAll();
   await fetchTracking(parcel.id);
@@ -608,7 +639,10 @@ Réponds UNIQUEMENT en JSON valide, sans balises markdown, avec exactement ces c
     const clean = text.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
 
+    // Préserver le nom donné par l'utilisateur (ne pas le laisser écraser)
+    const userName = parcel.name;
     Object.assign(parcel, parsed, { loading: false });
+    if (userName) parcel.name = userName;
   } catch (e) {
     parcel.loading = false;
     parcel.carrier = 'Erreur';
@@ -734,14 +768,25 @@ function renderCard(p, faded = false) {
   const detailHtml = p.detail ? `
     <div class="card-detail ${p.open ? 'open' : ''}">
       <div class="detail-text">${esc(p.detail)}</div>
+      <div class="detail-carrier">
+        <span class="select-label">Corriger le transporteur :</span>
+        <select class="carrier-select carrier-select-sm" onchange="changeCarrier(${p.id}, this.value)">
+          ${carrierOptions(p.carrierKey)}
+        </select>
+      </div>
       <div class="detail-actions">
         <button class="btn-sm" onclick="refreshParcel(${p.id})">↻ Actualiser</button>
+        <button class="btn-sm" onclick="renameParcel(${p.id})">Renommer</button>
         <button class="btn-sm danger" onclick="deleteParcel(${p.id})">Supprimer</button>
       </div>
     </div>` : '';
 
   const expandIcon = p.open ? '▲' : '▼';
   const expandLabel = p.open ? 'Réduire' : 'Détails';
+
+  // Titre principal = nom du colis si donné, sinon transporteur
+  const title = p.name || p.carrier;
+  const subtitle = p.name ? p.carrier : '';
 
   return `
     <div class="parcel-card ${p.loading ? 'loading' : ''}" style="${faded ? 'opacity:0.55' : ''}">
@@ -750,8 +795,8 @@ function renderCard(p, faded = false) {
           ${p.loading ? '<div class="spinner"></div>' : esc(initials)}
         </div>
         <div class="parcel-meta">
-          <div class="parcel-carrier">${esc(p.carrier)}</div>
-          ${p.label ? `<div class="parcel-label">${esc(p.label)}</div>` : ''}
+          <div class="parcel-carrier">${esc(title)}</div>
+          ${subtitle ? `<div class="parcel-label">${esc(subtitle)}</div>` : ''}
           <div class="parcel-num">${esc(p.num)}</div>
         </div>
         <div class="status-chip ${statusClass}">${esc(p.statusLabel)}</div>
@@ -763,6 +808,61 @@ function renderCard(p, faded = false) {
           <span>${expandIcon}</span> ${expandLabel}
         </button>` : ''}
     </div>`;
+}
+
+// ── CARRIER OPTIONS (pour le select dans le détail) ─
+const CARRIERS = [
+  { group: 'France', items: [
+    ['colissimo','Colissimo'],['chronopost','Chronopost'],['mondialrelay','Mondial Relay'],
+    ['laposte','La Poste'],['colis-prive','Colis Privé'],['dpd','DPD'],['gls','GLS'],['bpost','bpost']
+  ]},
+  { group: 'International', items: [
+    ['dhl','DHL Express'],['ups','UPS'],['fedex','FedEx'],['amazon','Amazon Logistics'],
+    ['tnt','TNT'],['maersk','Maersk'],['msc','MSC'],['cma-cgm','CMA CGM'],
+    ['usps','USPS'],['royal-mail','Royal Mail'],['correos','Correos'],['poste-italiane','Poste Italiane']
+  ]},
+  { group: 'Asie', items: [
+    ['china-post','China Post'],['yanwen','Yanwen'],['sf-express','SF Express'],['ems','EMS']
+  ]}
+];
+
+function carrierOptions(selectedKey) {
+  let html = `<option value="">— choisir —</option>`;
+  CARRIERS.forEach(g => {
+    html += `<optgroup label="${g.group}">`;
+    g.items.forEach(([key, name]) => {
+      html += `<option value="${key}" ${key === selectedKey ? 'selected' : ''}>${name}</option>`;
+    });
+    html += `</optgroup>`;
+  });
+  return html;
+}
+
+// ── CHANGE CARRIER (correction manuelle) ────────────
+async function changeCarrier(id, carrierKey) {
+  if (!carrierKey) return;
+  const parcel = parcels.find(p => p.id === id);
+  if (!parcel) return;
+  const name = CARRIERS.flatMap(g => g.items).find(([k]) => k === carrierKey)?.[1] || carrierKey;
+  parcel.carrierKey = carrierKey;
+  parcel.carrier = name;
+  parcel.forcedCarrier = name;
+  parcel.loading = true;
+  saveParcels();
+  renderAll();
+  await fetchTracking(id);
+  showToast(`Transporteur corrigé : ${name}`);
+}
+
+// ── RENAME ──────────────────────────────────────────
+function renameParcel(id) {
+  const parcel = parcels.find(p => p.id === id);
+  if (!parcel) return;
+  const newName = prompt('Nom du colis :', parcel.name || '');
+  if (newName === null) return;
+  parcel.name = newName.trim();
+  saveParcels();
+  renderAll();
 }
 
 // ── UTILS ──────────────────────────────────────────
