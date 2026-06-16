@@ -381,6 +381,13 @@
   .c-gls        { background: #2a2a0a; color: #c8c84d; }
   .c-colis-prive { background: #1a2a1a; color: #7fc87f; }
   .c-tnt        { background: #3a1a00; color: #ff9933; }
+  .c-seur       { background: #2a0a1a; color: #e85a8a; }
+  .c-correos    { background: #2a2200; color: #e8c84d; }
+  .c-correos-express { background: #2a2200; color: #e8c84d; }
+  .c-ctt        { background: #2a0000; color: #ff6666; }
+  .c-brt        { background: #1a2a00; color: #a0d44d; }
+  .c-hermes     { background: #001a2a; color: #4dc8e8; }
+  .c-postnl     { background: #2a1a00; color: #ffa64d; }
   .c-default    { background: var(--navy-light); color: var(--ink-dim); }
 
   .divider { border: none; border-top: 1px solid var(--navy-border); margin: 20px 0; }
@@ -443,8 +450,18 @@
           <option value="cma-cgm">CMA CGM</option>
           <option value="usps">USPS</option>
           <option value="royal-mail">Royal Mail</option>
-          <option value="correos">Correos</option>
+        </optgroup>
+        <optgroup label="Europe">
+          <option value="seur">SEUR (Espagne)</option>
+          <option value="correos">Correos (Espagne)</option>
+          <option value="correos-express">Correos Express</option>
+          <option value="ctt">CTT (Portugal)</option>
           <option value="poste-italiane">Poste Italiane</option>
+          <option value="brt">BRT (Italie)</option>
+          <option value="hermes">Hermes / Evri</option>
+          <option value="postnl">PostNL</option>
+          <option value="dpd">DPD</option>
+          <option value="gls">GLS</option>
         </optgroup>
         <optgroup label="Asie">
           <option value="china-post">China Post</option>
@@ -674,6 +691,7 @@ function guessTrackingUrl(num) {
     return `https://www.fedex.com/fedextrack/?trknbr=${num}`;
   }
   if (/^\d{20}$/.test(num)) return `https://www.amazon.fr/progress-tracker/package/ref=pe_v2_tpd_b?_encoding=UTF8&itemId=&orderId=${num}`;
+  if (/^\d{14}$/.test(num)) return `https://www.seur.com/liveTracking/?segOnlineIdentificador=${num}`;
   return null;
 }
 
@@ -819,7 +837,12 @@ const CARRIERS = [
   { group: 'International', items: [
     ['dhl','DHL Express'],['ups','UPS'],['fedex','FedEx'],['amazon','Amazon Logistics'],
     ['tnt','TNT'],['maersk','Maersk'],['msc','MSC'],['cma-cgm','CMA CGM'],
-    ['usps','USPS'],['royal-mail','Royal Mail'],['correos','Correos'],['poste-italiane','Poste Italiane']
+    ['usps','USPS'],['royal-mail','Royal Mail']
+  ]},
+  { group: 'Europe', items: [
+    ['seur','SEUR (Espagne)'],['correos','Correos (Espagne)'],['correos-express','Correos Express'],
+    ['ctt','CTT (Portugal)'],['poste-italiane','Poste Italiane'],['brt','BRT (Italie)'],
+    ['hermes','Hermes / Evri'],['postnl','PostNL']
   ]},
   { group: 'Asie', items: [
     ['china-post','China Post'],['yanwen','Yanwen'],['sf-express','SF Express'],['ems','EMS']
