@@ -276,11 +276,27 @@
     color: var(--navy);
     border-color: var(--gold);
   }
+  .card-footer {
+    display: flex; align-items: stretch;
+    border-top: 1px solid var(--navy-border);
+  }
+  .footer-track {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    font-size: 12px; font-weight: 600;
+    color: var(--gold);
+    text-decoration: none;
+    padding: 9px;
+    transition: background 0.15s;
+  }
+  .footer-track:hover { background: var(--gold-dim); }
   .expand-btn {
-    width: 100%; text-align: center;
+    flex: 1;
+    text-align: center;
     font-size: 12px; color: var(--ink-faint);
-    padding: 6px;
+    padding: 9px;
     border: none; background: none; cursor: pointer;
+    border-left: 1px solid var(--navy-border);
     transition: color 0.15s;
     display: flex; align-items: center; justify-content: center; gap: 4px;
   }
@@ -849,7 +865,6 @@ function renderCard(p, faded = false) {
         </select>
       </div>
       <div class="detail-actions">
-        ${trackUrl ? `<a class="btn-sm btn-primary" href="${esc(trackUrl)}" target="_blank" rel="noopener">↗ Ouvrir le suivi</a>` : ''}
         <button class="btn-sm" onclick="refreshParcel(${p.id})">↻ Actualiser</button>
         <button class="btn-sm" onclick="renameParcel(${p.id})">Renommer</button>
         <button class="btn-sm danger" onclick="deleteParcel(${p.id})">Supprimer</button>
@@ -879,9 +894,12 @@ function renderCard(p, faded = false) {
       ${progressHtml}
       ${detailHtml}
       ${p.detail || !p.loading ? `
-        <button class="expand-btn" onclick="toggleDetail(${p.id})">
-          <span>${expandIcon}</span> ${expandLabel}
-        </button>` : ''}
+        <div class="card-footer">
+          ${trackUrl ? `<a class="footer-track" href="${esc(trackUrl)}" target="_blank" rel="noopener">↗ Ouvrir le suivi</a>` : '<span></span>'}
+          <button class="expand-btn" onclick="toggleDetail(${p.id})">
+            <span>${expandIcon}</span> ${expandLabel}
+          </button>
+        </div>` : ''}
     </div>`;
 }
 
