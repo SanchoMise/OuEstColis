@@ -74,17 +74,27 @@
   /* ── MAIN ───────────────────────────────────────── */
   .main { max-width: 680px; margin: 0 auto; padding: 28px 20px 80px; }
 
-  /* ── ADD ROW ────────────────────────────────────── */
-  .add-row {
-    display: flex; gap: 8px; margin-bottom: 28px;
-  }
-  .add-input {
-    flex: 1;
+  /* ── ADD BLOCK ──────────────────────────────────── */
+  .add-block {
     background: var(--navy-mid);
     border: 1px solid var(--navy-border);
     border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 28px;
+  }
+  .add-row {
+    display: flex; gap: 8px; margin-bottom: 10px;
+  }
+  .add-row-2 {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .add-input {
+    flex: 1;
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--radius-sm);
     padding: 0 14px;
-    height: 44px;
+    height: 42px;
     font-size: 14px;
     color: var(--ink);
     font-family: var(--mono);
@@ -94,15 +104,39 @@
   }
   .add-input::placeholder { color: var(--ink-faint); font-family: -apple-system, sans-serif; letter-spacing: 0; }
   .add-input:focus { border-color: var(--gold); }
+  .carrier-select {
+    flex: 1;
+    background: var(--navy);
+    border: 1px solid var(--navy-border);
+    border-radius: var(--radius-sm);
+    padding: 0 12px;
+    height: 38px;
+    font-size: 13px;
+    color: var(--ink-dim);
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%233d5470' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+  }
+  .carrier-select:focus { border-color: var(--gold); }
+  .carrier-select option { background: var(--navy-mid); color: var(--ink); }
+  .select-label {
+    font-size: 12px; color: var(--ink-faint); white-space: nowrap; flex-shrink: 0;
+  }
   .add-btn {
-    height: 44px; padding: 0 18px;
+    height: 42px; padding: 0 18px;
     background: var(--gold);
-    border: none; border-radius: var(--radius);
+    border: none; border-radius: var(--radius-sm);
     font-size: 14px; font-weight: 600;
     color: var(--navy);
     cursor: pointer;
     transition: background 0.15s, transform 0.1s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .add-btn:hover { background: var(--gold-light); }
   .add-btn:active { transform: scale(0.97); }
@@ -317,6 +351,13 @@
   .c-fedex      { background: #1a0f3a; color: #9b7fe8; }
   .c-amazon     { background: #1a2a3a; color: #48a9e6; }
   .c-laposte    { background: #0a2a4a; color: #4da6ff; }
+  .c-maersk     { background: #00203a; color: #00b4d8; }
+  .c-msc        { background: #1a0a2e; color: #b07fe8; }
+  .c-cma-cgm    { background: #0a1a3a; color: #4d88ff; }
+  .c-dpd        { background: #3a0a1a; color: #e87fa0; }
+  .c-gls        { background: #2a2a0a; color: #c8c84d; }
+  .c-colis-prive { background: #1a2a1a; color: #7fc87f; }
+  .c-tnt        { background: #3a1a00; color: #ff9933; }
   .c-default    { background: var(--navy-light); color: var(--ink-dim); }
 
   .divider { border: none; border-top: 1px solid var(--navy-border); margin: 20px 0; }
@@ -345,9 +386,47 @@
 
 <!-- MAIN -->
 <div class="main">
-  <div class="add-row">
-    <input class="add-input" id="trackInput" placeholder="Coller un numéro de suivi…" onkeydown="if(event.key==='Enter') addTracking()" />
-    <button class="add-btn" id="addBtn" onclick="addTracking()">Ajouter</button>
+  <div class="add-block">
+    <div class="add-row">
+      <input class="add-input" id="trackInput" placeholder="Coller un numéro de suivi…" onkeydown="if(event.key==='Enter') addTracking()" />
+      <button class="add-btn" id="addBtn" onclick="addTracking()">Ajouter</button>
+    </div>
+    <div class="add-row-2">
+      <span class="select-label">Transporteur :</span>
+      <select class="carrier-select" id="carrierSelect">
+        <option value="">Détecter automatiquement</option>
+        <optgroup label="France">
+          <option value="colissimo">Colissimo</option>
+          <option value="chronopost">Chronopost</option>
+          <option value="mondialrelay">Mondial Relay</option>
+          <option value="laposte">La Poste</option>
+          <option value="colis-prive">Colis Privé</option>
+          <option value="dpd">DPD</option>
+          <option value="gls">GLS</option>
+          <option value="bpost">bpost</option>
+        </optgroup>
+        <optgroup label="International">
+          <option value="dhl">DHL Express</option>
+          <option value="ups">UPS</option>
+          <option value="fedex">FedEx</option>
+          <option value="amazon">Amazon Logistics</option>
+          <option value="tnt">TNT</option>
+          <option value="maersk">Maersk</option>
+          <option value="msc">MSC</option>
+          <option value="cma-cgm">CMA CGM</option>
+          <option value="usps">USPS</option>
+          <option value="royal-mail">Royal Mail</option>
+          <option value="correos">Correos</option>
+          <option value="poste-italiane">Poste Italiane</option>
+        </optgroup>
+        <optgroup label="Asie">
+          <option value="china-post">China Post</option>
+          <option value="yanwen">Yanwen</option>
+          <option value="sf-express">SF Express</option>
+          <option value="ems">EMS</option>
+        </optgroup>
+      </select>
+    </div>
   </div>
 
   <div id="listContainer"></div>
@@ -434,16 +513,21 @@ function applyProfile() {
 
 // ── ADD TRACKING ───────────────────────────────────
 async function addTracking() {
-  const input = document.getElementById('trackInput');
-  const num   = input.value.trim().replace(/\s+/g, '');
+  const input  = document.getElementById('trackInput');
+  const select = document.getElementById('carrierSelect');
+  const num    = input.value.trim().replace(/\s+/g, '');
+  const forcedCarrierKey = select.value || '';
+  const forcedCarrierName = select.options[select.selectedIndex]?.text || '';
+
   if (!num) return;
   if (parcels.find(p => p.num === num)) { showToast('Ce numéro est déjà suivi.'); return; }
 
   const parcel = {
     id: Date.now(),
     num,
-    carrier: 'Identification…',
-    carrierKey: 'default',
+    carrier: forcedCarrierKey ? forcedCarrierName : 'Identification…',
+    carrierKey: forcedCarrierKey || 'default',
+    forcedCarrier: forcedCarrierKey ? forcedCarrierName : '',
     label: '',
     status: 'pending',
     statusLabel: 'Récupération…',
@@ -460,6 +544,7 @@ async function addTracking() {
   parcels.unshift(parcel);
   saveParcels();
   input.value = '';
+  select.value = '';
   renderAll();
   await fetchTracking(parcel.id);
 }
@@ -475,23 +560,26 @@ async function fetchTracking(id) {
 
   const prompt = `Tu es un assistant expert en suivi de colis.
 Numéro de suivi : ${num}
-URL de suivi probable : ${trackingUrl || 'inconnue'}
+${parcel.forcedCarrier ? `Transporteur indiqué par l'utilisateur : ${parcel.forcedCarrier} (utilise impérativement ce transporteur, ne le remplace pas)` : `URL de suivi probable : ${trackingUrl || 'inconnue'}`}
 Code postal de destination : ${profile.postal || 'non renseigné'}
 
-En te basant uniquement sur le format du numéro de suivi, identifie le transporteur et fournis une analyse.
+${parcel.forcedCarrier
+  ? `Le transporteur est confirmé : ${parcel.forcedCarrier}. Fournis le lien de suivi officiel exact pour ce transporteur avec ce numéro, et toutes les informations utiles.`
+  : `En te basant sur le format du numéro de suivi, identifie le transporteur et fournis une analyse.`
+}
 
 Réponds UNIQUEMENT en JSON valide, sans balises markdown, avec exactement ces champs :
 {
-  "carrier": "Nom du transporteur en français (ex: Colissimo, Mondial Relay, DHL Express, UPS, FedEx, Chronopost, Amazon Logistics, La Poste)",
-  "carrierKey": "clé minuscule sans espace : colissimo | mondialrelay | chronopost | dhl | ups | fedex | amazon | laposte | default",
+  "carrier": "Nom du transporteur en français (ex: Colissimo, Mondial Relay, DHL Express, UPS, FedEx, Chronopost, Amazon Logistics, Maersk, MSC…)",
+  "carrierKey": "clé minuscule sans espace : colissimo | mondialrelay | chronopost | dhl | ups | fedex | amazon | laposte | maersk | msc | cma-cgm | dpd | gls | colis-prive | default",
   "status": "pending | transit | out | delivered | issue",
   "statusLabel": "Libellé court du statut en français (ex: En livraison, En transit, Livré, Problème détecté)",
   "progress": nombre entre 1 et 4,
   "progressMax": 4,
   "lastEvent": "Dernière info connue ou vide si inconnue",
   "eta": "Date/heure estimée de livraison ou vide",
-  "detail": "Résumé clair en français de ce qu'on sait sur ce colis. Si tu ne peux pas accéder aux données en temps réel, explique comment suivre ce colis et donne le lien direct de suivi. Sois utile et concis.",
-  "label": "Nom court pour identifier ce colis (ex: 'Colis Amazon', 'Commande Zalando') ou vide"
+  "detail": "Résumé clair en français. Donne le lien direct de suivi officiel pour ce transporteur + numéro. Sois utile et concis.",
+  "label": "Nom court pour identifier ce colis (ex: 'Conteneur Maersk', 'Colis Amazon') ou vide"
 }`;
 
   try {
