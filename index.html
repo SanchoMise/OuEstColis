@@ -240,7 +240,7 @@
     white-space: pre-wrap;
   }
   .detail-actions {
-    display: flex; gap: 8px; margin-top: 10px;
+    display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;
   }
   .detail-carrier {
     display: flex; align-items: center; gap: 8px;
@@ -258,10 +258,24 @@
     background: transparent;
     color: var(--ink-dim);
     cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    display: inline-flex; align-items: center; gap: 4px;
+    text-decoration: none;
+    line-height: 1.6;
   }
   .btn-sm:hover { border-color: var(--ink-dim); color: var(--ink); }
   .btn-sm.danger:hover { border-color: var(--red); color: var(--red); }
+  .btn-sm.btn-primary {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+    font-weight: 600;
+  }
+  .btn-sm.btn-primary:hover {
+    background: var(--gold);
+    color: var(--navy);
+    border-color: var(--gold);
+  }
   .expand-btn {
     width: 100%; text-align: center;
     font-size: 12px; color: var(--ink-faint);
@@ -691,8 +705,49 @@ function guessTrackingUrl(num) {
     return `https://www.fedex.com/fedextrack/?trknbr=${num}`;
   }
   if (/^\d{20}$/.test(num)) return `https://www.amazon.fr/progress-tracker/package/ref=pe_v2_tpd_b?_encoding=UTF8&itemId=&orderId=${num}`;
-  if (/^\d{14}$/.test(num)) return `https://www.seur.com/liveTracking/?segOnlineIdentificador=${num}`;
+  if (/^\d{14}$/.test(num)) return `https://www.seur.com/livetracking/?segOnlineIdentificador=${num}`;
   return null;
+}
+
+// ── TRACKING URL PAR TRANSPORTEUR ───────────────────
+// {num} est remplacé par le numéro de suivi (encodé)
+const TRACKING_URLS = {
+  colissimo:        'https://www.laposte.fr/outils/suivre-vos-envois?code={num}',
+  laposte:          'https://www.laposte.fr/outils/suivre-vos-envois?code={num}',
+  chronopost:       'https://www.chronopost.fr/tracking-no-cms/suivi-page?listeNumerosLT={num}',
+  mondialrelay:     'https://www.mondialrelay.fr/suivi-de-colis/?numColis={num}',
+  'colis-prive':    'https://www.colisprive.fr/moncolis/pages/detailColis.aspx?numColis={num}',
+  dpd:              'https://www.dpd.fr/trace/{num}',
+  gls:              'https://gls-group.com/FR/fr/suivi-colis?match={num}',
+  bpost:            'https://track.bpost.cloud/btr/web/#/search?itemCode={num}',
+  dhl:              'https://www.dhl.com/fr-fr/home/tracking.html?tracking-id={num}',
+  ups:              'https://www.ups.com/track?loc=fr_FR&tracknum={num}',
+  fedex:            'https://www.fedex.com/fedextrack/?trknbr={num}',
+  amazon:           'https://track.amazon.fr/tracking/{num}',
+  tnt:              'https://www.tnt.com/express/fr_fr/site/outils-expedition/suivi.html?searchType=con&cons={num}',
+  maersk:           'https://www.maersk.com/tracking/{num}',
+  msc:              'https://www.msc.com/fr/track-a-shipment?agencyPath=fra&trackingNumber={num}',
+  'cma-cgm':        'https://www.cma-cgm.com/ebusiness/tracking/search?SearchBy=Container&Reference={num}',
+  usps:             'https://tools.usps.com/go/TrackConfirmAction?tLabels={num}',
+  'royal-mail':     'https://www.royalmail.com/track-your-item#/tracking-results/{num}',
+  seur:             'https://www.seur.com/livetracking/?segOnlineIdentificador={num}',
+  correos:          'https://www.correos.es/es/es/herramientas/localizador/envios/detalle?tracking-number={num}',
+  'correos-express':'https://www.correosexpress.com/web/correosexpress/itemtracking?tracking={num}',
+  ctt:              'https://appserver.ctt.pt/CustomerArea/PublicArea_Detail?ObjectCodeInput={num}',
+  'poste-italiane': 'https://www.poste.it/cerca/index.html#/risultati-spedizioni/{num}',
+  brt:              'https://vas.brt.it/vas/sped_det_show.htm?referer=sped_numspe_par.htm&Spediz_Numero={num}',
+  hermes:           'https://www.evri.com/track/parcel/{num}',
+  postnl:           'https://postnl.post/details/?barcode={num}',
+  'china-post':     'https://track.chinapost.com.cn/result.html?bill={num}',
+  yanwen:           'https://track.yanwen.com/?nums={num}',
+  'sf-express':     'https://www.sf-express.com/chn/sc/dynamic_function/waybill/#search/bill-number/{num}',
+  ems:              'https://www.ems.com.cn/queryService/queryList?mailNo={num}'
+};
+
+function trackingUrlFor(parcel) {
+  const tpl = TRACKING_URLS[parcel.carrierKey];
+  if (tpl) return tpl.replace('{num}', encodeURIComponent(parcel.num));
+  return guessTrackingUrl(parcel.num);
 }
 
 // ── REFRESH ────────────────────────────────────────
@@ -783,6 +838,7 @@ function renderCard(p, faded = false) {
       </div>`;
   }
 
+  const trackUrl = trackingUrlFor(p);
   const detailHtml = p.detail ? `
     <div class="card-detail ${p.open ? 'open' : ''}">
       <div class="detail-text">${esc(p.detail)}</div>
@@ -793,6 +849,7 @@ function renderCard(p, faded = false) {
         </select>
       </div>
       <div class="detail-actions">
+        ${trackUrl ? `<a class="btn-sm btn-primary" href="${esc(trackUrl)}" target="_blank" rel="noopener">↗ Ouvrir le suivi</a>` : ''}
         <button class="btn-sm" onclick="refreshParcel(${p.id})">↻ Actualiser</button>
         <button class="btn-sm" onclick="renameParcel(${p.id})">Renommer</button>
         <button class="btn-sm danger" onclick="deleteParcel(${p.id})">Supprimer</button>
